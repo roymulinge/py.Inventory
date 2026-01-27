@@ -167,6 +167,36 @@ class DatabaseManager:
             #Update product quantity
             self.cursor.execute(
                 """
-                
+                UPDATE products
+                SET quantity = quantity - ?
+                  sold_quantity = sold_quantity + ?
+                WHERE name = ?
+                """, (quantity, quantity, name))
+            
+            #Record the sale
+            self.cursor.execute(
                 """
-            )
+                INSERT INTO sales (product_name, quantity_sold, total_price)
+                VALUES (?, ?, ?)
+                """,(name, quantity, total_price))
+            
+            #Update daily sales summary
+            today = datetime.now().strftime("%d-%m-%Y")
+            self.cursor.execute(
+                """
+               INSERT INTO daily_summary (date, total_sales, items_sold)
+               VALUES(?, ?, ?)
+               ON CONFLICT(date) DO UPDATE SET
+               total_sales = total_sales + ?,
+               items_sold = items_sold + ?
+                """, (today, total_price, quantity, total_price, quantity))
+            
+            self.conn.commit()
+            print(f"✅ Sold {quantity} {name}(s) for ${total_price:.2f}")
+            return True
+            
+        except Exception as e:
+            print(f"❌Error processing sale: {e}")
+            return False
+    
+    
