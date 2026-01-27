@@ -1,4 +1,5 @@
-
+import sqlite3
+from datetime import datetime
 
 class product:
     def __init__(self, name, price, quantity):
@@ -99,7 +100,7 @@ class DatabaseManager:
             FOREIGN KEY (product_name) REFRENCES products(name)                                        
                             
         )
-""")
+        """)
         
         #Add daily_sales table for reports
         self.cursor.execute("""
@@ -109,8 +110,29 @@ class DatabaseManager:
             items_sold INTEGER DEFAULT 0               
         )
                             
-""")
+        """)
         self.conn.commit()
         print("✅ Database tables created/verified")
 
-    
+    def add_product(self, name, price, quantity):
+        """Add a new product or update.
+        
+          sqlite uses ? as placeholder to prevent sql injection attacks.
+        """
+
+        #Error handling 
+        try:
+            self.cursor.execute(
+                """
+            INSERT INTO products (name, price, quantity)
+            VALUES(?, ?, ?)
+            ON CONFLICT(name) DO UPDATE SET
+            quantity = quantity +?
+        """, (name, price, quantity, quantity))
+            
+            self.conn.commit()
+            print(f"✅ Product '{name}' added/updated")
+            return True
+        except Exception as e:
+            print(f"❌Error adding product: {e}")
+            return False
