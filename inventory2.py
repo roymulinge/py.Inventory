@@ -51,6 +51,66 @@ class product:
         """String representation for printing."""
         return f"{self.name}: ${self.price:.2f}| Stock: {self.quantity} | Sold: {self.sold_quantity}"
     
+    
+class DatabaseManager:
+    """ 
+    Manages all database operations.
+    -Create Tables
+    -Saving Products
+    -Recording sales
+    - Fetching data
+    """
 
+    def __init__(self, db_name = "inventory.db"):
+        """
+        connect to sqlite Database
+        sqlite stores data in a single file (inventory.db)
+        """
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+
+    def create_tables(self):
+       
+       #Products table - stores product information
+        self.cursor.execute(
+            """
+             CREATE TABLE IF NOT EXISTS products(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT UNIQUE NOT NULL,
+                price REAL NOT NULL,
+                quantity INTEGER DEFAULT 0,
+                sold_quantity INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+             )
+            """
+        )
+
+        #Sales table -records every sale
+        self.cursor.execute("""
+
+         CREATE TABLES IF NOT EXISTS sales(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_name TEXT NOT NULL,
+            quantity_sold INTEGER NOT NULL,
+            total_price REAL NOT NULL,
+            sale_date TIMESTAMP DEFAULT CURRENT_TIMESATMP,
+            FOREIGN KEY (product_name) REFRENCES products(name)                                        
+                            
+        )
+""")
+        
+        #Add daily_sales table for reports
+        self.cursor.execute("""
+        CREATE TABLES IF NOT EXISTS daily_sales(
+            date DATE PRIMARY KEY,
+            total_sales REAL DEFAULT 0, 
+            items_sold INTEGER DEFAULT 0               
+        )
+                            
+""")
+        self.conn.commit()
+        print("✅ Database tables created/verified")
 
     
