@@ -255,5 +255,85 @@ class Inventory:
             return
             
         return self.db.add_product(name, price, quantity)
-
     
+    def sell_product(self, name, quantity):
+        """Sell a product."""
+        if quantity <= 0:
+            print("❌ Quantity must be positive!")
+            return False
+            
+        success = self.db.sell_product(name, quantity)
+        if success:
+            self.total_cash += self.get_product_price(name) * quantity
+        return success
+    def get_product_price(self, name):
+        """Get price of a product."""
+        product = self.db.get_product(name)
+        return product[1] if product else 0
+    
+    def show_summary(self):
+        """Display inventory summary."""
+        products = self.db.get_all_products()
+        
+        print("\n" + "="*50)
+        print("📊 INVENTORY SUMMARY")
+        print("="*50)
+        
+        if not products:
+            print("No products in inventory")
+            return
+            
+        total_value = 0
+        for product in products:
+            name, price, quantity, sold = product
+            value = price * quantity
+            total_value += value
+            print(f"• {name:<15} | Price: ${price:<7.2f} | "
+                  f"Stock: {quantity:<4} | Sold: {sold:<4} | "
+                  f"Value: ${value:<7.2f}")
+        
+        print("-"*50)
+        print(f"Total products: {len(products)}")
+        print(f"Total inventory value: ${total_value:.2f}")
+        print(f"Total cash earned: ${self.total_cash:.2f}")
+        print("="*50)
+    
+    def show_low_stock(self, threshold=5):
+        """Show products running low."""
+        low_stock = self.db.get_low_stock_products(threshold)
+        
+        print("\n" + "="*50)
+        print(f"📉 LOW STOCK ALERT (below {threshold})")
+        print("="*50)
+        
+        if not low_stock:
+            print("All products have sufficient stock ✓")
+        else:
+            for product in low_stock:
+                print(f"⚠️  {product[0]}: Only {product[1]} left!")
+        print("="*50)
+
+    def export_to_csv(self, filename="inventory_report.csv"):
+        """Export inventory to CSV file."""
+        import csv
+        
+        products = self.db.get_all_products()
+        
+        with open(filename, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['Product', 'Price', 'Stock', 'Sold', 'Total Value'])
+            
+            for product in products:
+                name, price, quantity, sold = product
+                total_value = price * quantity
+                writer.writerow([name, price, quantity, sold, total_value])
+        
+        print(f"✅ Exported to {filename}")
+
+        def close(self):
+            """Close database connection."""
+            self.db.close()
+
+# ============================================================================
+# SIMPLE COMMAND LINE INTERFACE
+# ============================================================================
