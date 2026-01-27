@@ -223,3 +223,37 @@ class DatabaseManager:
         """Close database connection."""
         self.conn.close()
 
+class Inventory:
+    """
+    Main inventory
+    -product logic
+    -database operations(DatabaseManger class)
+     -Business rules
+    """
+
+    def __init__(self):
+        """Initialize with a database connection"""
+        self.db = DatabaseManager()
+        self.total_cash = self.calculate_total_cash()
+    
+    def calculate_total_cash(self):
+        """Calculate total cash from all sales."""
+        try:
+            self.db.cursor.execute("SELECT SUM(total_price) FROM sales")
+            result = self.db.cursor.fetchone()
+            return result[0] if result[0] else 0
+        except:
+            return 0
+    
+    def add_product(self, name, price, quantity):
+        """Add new product or restock existing one."""
+        if price < 0:
+            print("❌ Price cannot be negative!")
+            return
+        if quantity < 0:
+            print("❌ Quantity cannot be negative!")
+            return
+            
+        return self.db.add_product(name, price, quantity)
+
+    
