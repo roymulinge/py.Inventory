@@ -211,3 +211,15 @@ class DatabaseManager:
             )
         return self.cursor.fetchone()
     
+    def get_low_stock_products(self, threshold=5):
+        """ Get products with low stock (below threshold)."""
+        self.cursor.execute(
+            "SELECT name, quantity FROM products WHERE quantity < ?",
+            (threshold,)
+        )
+        return self.cursor.fetchall()
+    
+    def close(self):
+        """Close database connection."""
+        self.conn.close()
+
