@@ -136,3 +136,37 @@ class DatabaseManager:
         except Exception as e:
             print(f"❌Error adding product: {e}")
             return False
+        
+    def sell_product(self, name, quantity):
+        """
+        1.Check if product exists and has enough stock
+        2.Update product quantity
+        3.Record sale in sales table
+        4.Update daily sales summary
+        """
+        try:
+            #Check product existence
+            self.cursor.execute(
+                """SELECT price, quantity FROM products WHERE name = ?""",
+                (name,)
+            )
+            product = self.cursor.fetchone()
+
+            if not product:
+                print(f"❌ Product '{name}' not found!")
+                return False
+            
+            price, current_stock = product
+
+            #check if stock is enough
+            if current_stock < quantity:
+                print(f"❌Not enough stock! Available: {current_stock}")
+                return False
+            total_price = price * quantity
+
+            #Update product quantity
+            self.cursor.execute(
+                """
+                
+                """
+            )
