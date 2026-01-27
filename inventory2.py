@@ -337,3 +337,83 @@ class Inventory:
 # ============================================================================
 # SIMPLE COMMAND LINE INTERFACE
 # ============================================================================
+
+def main_menu():
+    """Display main menu."""
+    print("\n" + "="*50)
+    print("🏪 INVENTORY MANAGEMENT SYSTEM")
+    print("="*50)
+    print("1. Add/Restock Product")
+    print("2. Sell Product")
+    print("3. View Inventory Summary")
+    print("4. Check Low Stock")
+    print("5. View Daily Report")
+    print("6. Export to CSV")
+    print("7. Exit")
+    print("="*50)
+
+def run_cli():
+    """Run command line interface."""
+    inventory = Inventory()
+    
+    while True:
+        main_menu()
+        choice = input("Enter your choice (1-7): ").strip()
+        
+        if choice == "1":
+            print("\n➕ ADD/RESTOCK PRODUCT")
+            name = input("Product name: ").strip()
+            
+            try:
+                price = float(input("Price per unit: $"))
+                quantity = int(input("Quantity: "))
+                inventory.add_product(name, price, quantity)
+            except ValueError:
+                print("❌ Invalid input! Please enter numbers for price and quantity.")
+        
+        elif choice == "2":
+            print("\n💰 SELL PRODUCT")
+            name = input("Product name: ").strip()
+            
+            try:
+                quantity = int(input("Quantity to sell: "))
+                inventory.sell_product(name, quantity)
+            except ValueError:
+                print("❌ Invalid input! Please enter a number for quantity.")
+        
+        elif choice == "3":
+            inventory.show_summary()
+        
+        elif choice == "4":
+            try:
+                threshold = int(input("Low stock threshold (default 5): ") or 5)
+                inventory.show_low_stock(threshold)
+            except ValueError:
+                print("❌ Invalid threshold!")
+        
+        elif choice == "5":
+            date = input("Date (YYYY-MM-DD) or Enter for today: ").strip()
+            inventory.show_daily_report(date if date else None)
+        
+        elif choice == "6":
+            filename = input("CSV filename (default: inventory_report.csv): ").strip()
+            inventory.export_to_csv(filename if filename else "inventory_report.csv")
+        
+        elif choice == "7":
+            print("\n👋 Goodbye!")
+            inventory.close()
+            break
+        
+        else:
+            print("❌ Invalid choice! Please enter 1-7.")
+        
+        input("\nPress Enter to continue...")
+
+
+#===========================
+#Run program
+#===========================
+
+if __name__ == "__main__":
+    print("\n🚀 Starting Inventory Management System...")
+    run_cli()
