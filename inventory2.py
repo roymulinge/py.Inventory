@@ -199,4 +199,15 @@ class DatabaseManager:
             print(f"❌Error processing sale: {e}")
             return False
     
+    def get_daily_report(self, date=None):
+        """Get sales report for a specific day."""
+        if not date:
+            date = datetime.now().strftime("%d-%m-%Y")
+
+        self.cursor.execute(
+            """
+            SELECT total_sales, items_sold FROM daily_sales WHERE date = ?
+            """,(date,)
+            )
+        return self.cursor.fetchone()
     
