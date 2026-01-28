@@ -72,48 +72,43 @@ class DatabaseManager:
         self.create_tables()
 
     def create_tables(self):
-       
-       #Products table - stores product information
-        self.cursor.execute(
-            """
-             CREATE TABLE IF NOT EXISTS products(
+        """Create database tables if they don't exist."""
+        
+        # Products table - stores product information
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS products (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 price REAL NOT NULL,
                 quantity INTEGER DEFAULT 0,
                 sold_quantity INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
-             )
-            """
-        )
-
-        #Sales table -records every sale
-        self.cursor.execute("""
-
-         CREATE TABLES IF NOT EXISTS sales(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_name TEXT NOT NULL,
-            quantity_sold INTEGER NOT NULL,
-            total_price REAL NOT NULL,
-            sale_date TIMESTAMP DEFAULT CURRENT_TIMESATMP,
-            FOREIGN KEY (product_name) REFRENCES products(name)                                        
-                            
-        )
+            )
         """)
         
-        #Add daily_sales table for reports
+        # Sales table - records every sale
         self.cursor.execute("""
-        CREATE TABLES IF NOT EXISTS daily_sales(
-            date DATE PRIMARY KEY,
-            total_sales REAL DEFAULT 0, 
-            items_sold INTEGER DEFAULT 0               
-        )
-                            
+            CREATE TABLE IF NOT EXISTS sales (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_name TEXT NOT NULL,
+                quantity_sold INTEGER NOT NULL,
+                total_price REAL NOT NULL,
+                sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (product_name) REFERENCES products(name)
+            )
         """)
+        
+        # Add daily_sales table for reports
+        self.cursor.execute("""
+            CREATE TABLE IF NOT EXISTS daily_sales (
+                date DATE PRIMARY KEY,
+                total_sales REAL DEFAULT 0,
+                items_sold INTEGER DEFAULT 0
+            )
+        """)
+        
         self.conn.commit()
         print("✅ Database tables created/verified")
-
     def add_product(self, name, price, quantity):
         """Add a new product or update.
         
