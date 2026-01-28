@@ -220,14 +220,14 @@ class DatabaseManager:
 
 class Inventory:
     """
-    Main inventory
-    -product logic
-    -database operations(DatabaseManger class)
-     -Business rules
+    Main inventory system that combines:
+    - Product logic (Product class)
+    - Database operations (DatabaseManager class)
+    - Business rules
     """
-
+    
     def __init__(self):
-        """Initialize with a database connection"""
+        """Initialize with a database connection."""
         self.db = DatabaseManager()
         self.total_cash = self.calculate_total_cash()
     
@@ -261,6 +261,7 @@ class Inventory:
         if success:
             self.total_cash += self.get_product_price(name) * quantity
         return success
+    
     def get_product_price(self, name):
         """Get price of a product."""
         product = self.db.get_product(name)
@@ -307,7 +308,27 @@ class Inventory:
             for product in low_stock:
                 print(f"⚠️  {product[0]}: Only {product[1]} left!")
         print("="*50)
-
+    
+    def show_daily_report(self, date=None):
+        """Show sales report for a day."""
+        report = self.db.get_daily_report(date)
+        
+        if not date:
+            date = datetime.now().strftime("%Y-%m-%d")
+        
+        print("\n" + "="*50)
+        print(f"📈 DAILY SALES REPORT - {date}")
+        print("="*50)
+        
+        if report:
+            total_sales, items_sold = report
+            print(f"Total Sales: ${total_sales:.2f}")
+            print(f"Items Sold: {items_sold}")
+            print(f"Average Sale: ${total_sales/items_sold:.2f}" if items_sold > 0 else "No sales")
+        else:
+            print("No sales recorded for this date")
+        print("="*50)
+    
     def export_to_csv(self, filename="inventory_report.csv"):
         """Export inventory to CSV file."""
         import csv
@@ -324,10 +345,10 @@ class Inventory:
                 writer.writerow([name, price, quantity, sold, total_value])
         
         print(f"✅ Exported to {filename}")
-
-        def close(self):
-            """Close database connection."""
-            self.db.close()
+    
+    def close(self):
+        """Close database connection."""
+        self.db.close()
 
 # ============================================================================
 # SIMPLE COMMAND LINE INTERFACE
