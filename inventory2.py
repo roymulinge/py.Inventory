@@ -1,76 +1,78 @@
 import sqlite3
 from datetime import datetime
 
-class product:
+class Product:
     def __init__(self, name, price, quantity):
         """
-        A product represents a single item in our inventory.
-        Attributes: 
-        name: string, product name(eg, "soap")
-        price:float, price per unit
-        quantity: int, how many are stock.
-        sold_quantity: int, how many we've sold(start at 0)
+        A Product represents a single item in our inventory.
+        
+        Attributes:
+        - name: string, product name (e.g., "Soap")
+        - price: float, price per unit
+        - quantity: int, how many we have in stock
+        - sold_quantity: int, how many we've sold (starts at 0)
         """
         self.name = name
         self.price = price
         self.quantity = quantity
         self.sold_quantity = 0
-
+    
     def sell(self, amount):
         """
-        Sell a certain amount
-
-        1.Check if stock is enough.
-        2. reduce our stock.
-        3. add sold_quantity.
-        4. calculate money earned.
-
-        return: Total_money earned or 0 if no sell
+        Sell a certain amount of this product.
+        
+        Steps:
+        1. Check if we have enough stock
+        2. Reduce our stock
+        3. Increase sold count
+        4. Calculate money earned
+        
+        Returns: Total price (or 0 if can't sell)
         """
-
         if amount > self.quantity:
             print(f"❌ Not enough {self.name}! Available: {self.quantity}")
-            return 0
+            return 0 
         
-        self.quantity -= amount #remove from stock 
-        self.sold_quantity += amount #add sold_quantity
-        total_price = amount * self.price #calculate money 
-
-        print(f"✅Sold {amount} {self.name}(s) for ${total_price:.2f}")
+        self.quantity -= amount  # Remove from stock
+        self.sold_quantity += amount  # Add to sold count
+        total_price = amount * self.price  # Calculate money
+        
+        print(f"✅ Sold {amount} {self.name}(s) for ${total_price:.2f}")
         return total_price
     
     def restock(self, amount):
-        """Add more"""
+        """Add more items to our stock."""
         if amount < 0:
-            print(f"❌ Cannot restock negative amount!")
+            print("❌ Cannot restock negative amount!")
             return
-        
+            
         self.quantity += amount
         print(f"📦 Restocked {amount} {self.name}(s). Total: {self.quantity}")
-
+    
     def __str__(self):
         """String representation for printing."""
-        return f"{self.name}: ${self.price:.2f}| Stock: {self.quantity} | Sold: {self.sold_quantity}"
-    
-    
+        return f"{self.name}: ${self.price:.2f} | Stock: {self.quantity} | Sold: {self.sold_quantity}"
+
+
 class DatabaseManager:
-    """ 
+    """
     Manages all database operations.
-    -Create Tables
-    -Saving Products
-    -Recording sales
+    Think of this as a "data storage expert" who handles:
+    - Creating tables
+    - Saving products
+    - Recording sales
     - Fetching data
     """
-
-    def __init__(self, db_name = "inventory.db"):
+    
+    def __init__(self, db_name="inventory.db"):
         """
-        connect to sqlite Database
-        sqlite stores data in a single file (inventory.db)
+        Connect to SQLite database.
+        SQLite stores data in a single file (inventory.db).
         """
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
         self.create_tables()
-
+    
     def create_tables(self):
         """Create database tables if they don't exist."""
         
@@ -109,105 +111,115 @@ class DatabaseManager:
         
         self.conn.commit()
         print("✅ Database tables created/verified")
+    
     def add_product(self, name, price, quantity):
-        """Add a new product or update.
-        
-          sqlite uses ? as placeholder to prevent sql injection attacks.
         """
-
-        #Error handling 
+        Add a new product or update existing one.
+        
+        SQLite uses ? as placeholder to prevent SQL injection attacks.
+        """
         try:
-            self.cursor.execute(
-                """
-            INSERT INTO products (name, price, quantity)
-            VALUES(?, ?, ?)
-            ON CONFLICT(name) DO UPDATE SET
-            quantity = quantity +?
-        """, (name, price, quantity, quantity))
+            self.cursor.execute("""
+                INSERT INTO products (name, price, quantity) 
+                VALUES (?, ?, ?)
+                ON CONFLICT(name) DO UPDATE SET 
+                quantity = quantity + ?
+            """, (name, price, quantity, quantity))
             
             self.conn.commit()
             print(f"✅ Product '{name}' added/updated")
             return True
         except Exception as e:
-            print(f"❌Error adding product: {e}")
+            print(f"❌ Error adding product: {e}")
             return False
-        
+    
     def sell_product(self, name, quantity):
         """
-        1.Check if product exists and has enough stock
-        2.Update product quantity
-        3.Record sale in sales table
-        4.Update daily sales summary
+        Process a sale:
+        1. Check if product exists and has enough stock
+        2. Update product quantity
+        3. Record sale in sales table
+        4. Update daily sales summary
         """
         try:
-            #Check product existence
+            # 1. Check product exists and get current stock
             self.cursor.execute(
-                """SELECT price, quantity FROM products WHERE name = ?""",
+                "SELECT price, quantity FROM products WHERE name = ?", 
                 (name,)
             )
             product = self.cursor.fetchone()
-
+            
             if not product:
                 print(f"❌ Product '{name}' not found!")
                 return False
-            
+                
             price, current_stock = product
-
-            #check if stock is enough
-            if current_stock < quantity:
-                print(f"❌Not enough stock! Available: {current_stock}")
-                return False
-            total_price = price * quantity
-
-            #Update product quantity
-            self.cursor.execute(
-                """
-                UPDATE products
-                SET quantity = quantity - ?
-                  sold_quantity = sold_quantity + ?
-                WHERE name = ?
-                """, (quantity, quantity, name))
             
-            #Record the sale
-            self.cursor.execute(
-                """
+            # 2. Check if we have enough stock
+            if current_stock < quantity:
+                print(f"❌ Not enough stock! Available: {current_stock}")
+                return False
+            
+            total_price = price * quantity
+            
+            # 3. Update product quantity
+            self.cursor.execute("""
+                UPDATE products 
+                SET quantity = quantity - ?, 
+                    sold_quantity = sold_quantity + ?
+                WHERE name = ?
+            """, (quantity, quantity, name))
+            
+            # 4. Record the sale
+            self.cursor.execute("""
                 INSERT INTO sales (product_name, quantity_sold, total_price)
                 VALUES (?, ?, ?)
-                """,(name, quantity, total_price))
+            """, (name, quantity, total_price))
             
-            #Update daily sales summary
-            today = datetime.now().strftime("%d-%m-%Y")
-            self.cursor.execute(
-                """
-               INSERT INTO daily_summary (date, total_sales, items_sold)
-               VALUES(?, ?, ?)
-               ON CONFLICT(date) DO UPDATE SET
-               total_sales = total_sales + ?,
-               items_sold = items_sold + ?
-                """, (today, total_price, quantity, total_price, quantity))
+            # 5. Update daily sales summary
+            today = datetime.now().strftime("%Y-%m-%d")
+            self.cursor.execute("""
+                INSERT INTO daily_sales (date, total_sales, items_sold)
+                VALUES (?, ?, ?)
+                ON CONFLICT(date) DO UPDATE SET
+                total_sales = total_sales + ?,
+                items_sold = items_sold + ?
+            """, (today, total_price, quantity, total_price, quantity))
             
             self.conn.commit()
             print(f"✅ Sold {quantity} {name}(s) for ${total_price:.2f}")
             return True
             
         except Exception as e:
-            print(f"❌Error processing sale: {e}")
+            print(f"❌ Error processing sale: {e}")
             return False
+    
+    def get_all_products(self):
+        """Get all products from database."""
+        self.cursor.execute("SELECT name, price, quantity, sold_quantity FROM products")
+        return self.cursor.fetchall()
+    
+    def get_product(self, name):
+        """Get specific product details."""
+        self.cursor.execute(
+            "SELECT name, price, quantity, sold_quantity FROM products WHERE name = ?", 
+            (name,)
+        )
+        return self.cursor.fetchone()
     
     def get_daily_report(self, date=None):
         """Get sales report for a specific day."""
         if not date:
-            date = datetime.now().strftime("%d-%m-%Y")
-
+            date = datetime.now().strftime("%Y-%m-%d")
+        
         self.cursor.execute(
-            """
-            SELECT total_sales, items_sold FROM daily_sales WHERE date = ?
-            """,(date,)
-            )
+            "SELECT total_sales, items_sold FROM daily_sales WHERE date = ?",
+            (date,)
+        )
         return self.cursor.fetchone()
     
     def get_low_stock_products(self, threshold=5):
-        """ Get products with low stock (below threshold)."""
+        """Get products with low stock (below threshold)."""
         self.cursor.execute(
             "SELECT name, quantity FROM products WHERE quantity < ?",
             (threshold,)
@@ -217,6 +229,7 @@ class DatabaseManager:
     def close(self):
         """Close database connection."""
         self.conn.close()
+
 
 class Inventory:
     """
@@ -350,6 +363,7 @@ class Inventory:
         """Close database connection."""
         self.db.close()
 
+
 # ============================================================================
 # SIMPLE COMMAND LINE INTERFACE
 # ============================================================================
@@ -424,8 +438,6 @@ def run_cli():
             print("❌ Invalid choice! Please enter 1-7.")
         
         input("\nPress Enter to continue...")
-
-
 #===========================
 #Run program
 #===========================
